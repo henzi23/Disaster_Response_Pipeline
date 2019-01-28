@@ -21,6 +21,15 @@ All programming utilizes Python or HTML.  The Anconda environment for the python
 
 To run the project files copy folders (and associated content) app, data, and models to a single directory on your local machine.  Be sure not to change any file names.  From local command line (Anaconda environment suggested) navigate to the directory holding these folders.
 
+### File Descriptions
+
+Descriptions only covers files utilized by final product, thus files in the Preparation folder are not detailed:
+* data/process_data.py : Python script for ETL pipeline
+* data/disaster_messages.csv : flat file of messages collected from disasters (courtesy of Figure Eight).  Used as input to ETL pipeline
+* data/disaster_categories.csv : flat file of categorization of messages from disasters (courtesy of Figure Eight).  Used as input to ETL pipeline
+* model/train_classifier.py : Python script for ML pipeline.  This script would use the SQLite database outputed from the ETL pipeline as an input (database not included in repo)
+* app/run.py : Python script to run web app
+
 
 ## Deployment
 
