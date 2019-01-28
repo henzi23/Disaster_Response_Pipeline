@@ -4,6 +4,14 @@ from sqlalchemy import create_engine
 import sqlite3
 
 def load_data(messages_filepath, categories_filepath):
+    '''
+    Function to load and merge message data with categorization data by ID #
+    Inputs:
+        messages_filepath : (string) file path to csv file with message data
+        categories_filepath : (string) file path to csv file with categorization data
+    Return:
+        Pandas dataframe with the merged message and category information.
+    '''
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     return messages.merge(categories, on = 'id')
@@ -11,6 +19,14 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    '''
+    Function to clean data by seperating out the categories column to the 36 individual measures 
+    Inputs:
+        df : (Pandas dataframe) dataframe containing merged message and categories data
+    Return:
+        Pandas dataframe with categories split out to 36 individual category columns
+    '''
+    
     categories = df.categories.str.split(";",expand=True)
     row = categories.iloc[[0]].squeeze()
     categories.columns = pd.Series(map(lambda i : i[:-2],row))
@@ -24,6 +40,14 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    '''
+    Function to write dataframe to SQLite database
+    Inputs:
+        df : (Pandas dataframe) dataframe containing merged message and categories data
+        database_filename : (string) filename to be given to created database
+    Return:
+        None
+    '''
     engine = create_engine('sqlite:///' + database_filename)
     df.to_sql('Message_Categories', engine, if_exists='replace', index=False) 
 
