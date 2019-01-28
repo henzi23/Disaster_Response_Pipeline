@@ -16,10 +16,21 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.metrics import precision_recall_fscore_support as score
+from sklearn.model_selection import GridSearchCV
 
 import pickle
 
 def load_data(database_filepath):
+    '''
+    Function to open connection to SQLite database, load data, and seperate into
+    input variables and output categorization
+    Inputs:
+        database_filepath : (string) file path to SQLite database
+    Return:
+        X: (Pandas series) input variable (messages)
+        Y: (Pandas dataframe) output categorization
+        category_names: (Pandas series) output category names
+    '''
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_table('Message_Categories',engine)
     X = df.message.values
@@ -29,6 +40,14 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    '''
+    Function take in a message and process it by standardizing, tokenizing, 
+    removing stop words, and lemmatizing.
+    Inputs:
+        text : (string) message text
+    Return:
+        output_tokens : (list) resulting tokenization of the message
+    '''
     text = re.sub(r"[^a-z0-9]"," ",text.lower())   
     tokens = word_tokenize(text)
     tokens = [w for w in tokens if w not in stopwords.words("english")]
@@ -45,15 +64,42 @@ def tokenize(text):
 
 
 def build_model():
+     '''
+    Function to build machine learning model.  Machine model includes 
+    GridSearch to optimize results.
+    Inputs:
+        None
+    Return:
+        cv : model
+    '''
     pipeline = Pipeline([
         ('vect',CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
         ('clf', MultiOutputClassifier(AdaBoostClassifier()))   
     ])
-    return pipeline
+    
+    parameters = {
+    'vect__min_df' : (1,5),
+    'tfidf__use_idf' :  (True,False),
+    'clf__estimator__n_estimators': (10,25)
+    }
+    
+    cv = GridSearchCV(pipeline,param_grid=parameters)
+    return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    '''
+    Function to test model against test set and print model evaluation metrics
+    (precision, recall, fscore) for each output category.
+    Inputs:
+        model: model fitted to training set
+        X_test : input variables (messages) of test set
+        Y_test : output categorizations for test set
+        category_names: (Pandas series) output category names
+    Return:
+        None, but function prints out evaluation metrics
+    '''
     y_pred = model.predict(X_test)
     
     y_pred_df = pd.DataFrame(y_pred)
@@ -69,10 +115,17 @@ def evaluate_model(model, X_test, Y_test, category_names):
     averages = pd.DataFrame([['Categories Average', results['Precision'].mean(),
            results['Recall'].mean(), results['fscore'].mean()]], columns = results.columns)
     
-    print(averages)
+    print(results.append(averages, ignore_index=True))
 
 
 def save_model(model, model_filepath):
+    '''
+    Function to save model as a pickle file
+    Inputs:
+        model_filepath : (string) file path to save model
+    Return:
+        None
+    '''
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
